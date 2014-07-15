@@ -97,11 +97,11 @@ func (l *Lead) Status(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (l *Lead) Metrics(rw http.ResponseWriter, r *http.Request) {
-	var metrics interface{}
+	metrics := make(map[string]interface{})
 
 	for k, v := range l.Ports {
 		v.Channel() <- "METRICS"
-		metrics = <-v.Channel()
+		metrics[k] = <-v.Channel()
 
 		log.INFO.Println("Received metrics from " + k)
 	}
