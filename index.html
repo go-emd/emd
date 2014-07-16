@@ -10,31 +10,60 @@
 	<link rel="stylesheet" type="text/css" href="/main.css">
 </head>
 <body>
-	<a href="http://github.com/go-emd" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
+	<a href="http://github.com/go-emd" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png" /></a>
 
 	<div id="center">
 		<!-- Title -->
 		<h1>Go-EMD</h1>
-		<h4>- Go Language: EMbarrassingly Distributed</h6>
+		<h4>- Go Language: EMbarrassingly Distributed</h4>
 
 		<!-- Description -->
 		<h3>Methodologies</h3>
-		<p>Go-EMD contains three major components that are implemented in order to run the distribution successfully.  These components are the Worker, Leader, and Connector.  With all of these components implemented correctly the distribution will be optimal and DRY.</p>
+		<p>
+            Go-EMD contains three major components that are implemented in order to run the distribution
+            successfully.  These components are the Worker, Leader, and Connector.  With all of these components
+            implemented correctly the distribution will be optimal and DRY.
+        </p>
 
 		<h3>Distribution</h3>
 		<p>
 			<img src="/emd/images/EMD_DIST.png" />
-			<p>Above is a diagram of a typical distribution implementing the Go-EMD framework with more than one machine in the distribution.  It shows a minimal amount of connections and what the REST endpoints look like for a GUI to interface with it.</p>
+			<p>
+                Above is a diagram of a typical distribution implementing the Go-EMD framework with more than one
+                machine in the distribution.  It shows a minimal amount of connections and what the REST endpoints
+                look like for a GUI to interface with it.
+            </p>
 		</p>
 
 		<h3>Leader</h3>
 		<p>
-			sadf
+		    <p>
+                There is one and only one leader on each machine in the distribution.  This is because one leader handles
+                all REST endpoints and manages each worker on its machine.  Upon starting a leader all of its workers will
+                be automatically started.  Then the leader will monitor the workers and keep a running cache of each
+                worker' state, health, metrics, and last time updated.  Below is how a leader is implemented and the REST
+                endpoints that can be used.
+            </p>
+            <img src="/emd/images/EMD_LEADER.png" />
+            <p>
+                Above is a diagram showing visually how a leader will manage its workers and process requests for
+                either worker status, health, stop, and start.  Along with other commands available.
+            </p>
+            <p>
+                Here are some helpful code references in order to implement a leader.
+                <ul>
+                    <li>Leader interface</li>
+                    <li>Leader example implementation</li>
+                </ul>
+            </p>
 		</p>
 
 		<h3>Worker</h3>
 		<p>
-			Implements the worker interface and are the routines that do the actual computing within the distribution. Generally speaking a single distribution will consist of a Source (inputs data into the distribution), a Worker of some sort (thought of as a bolt in Apache's Storm), and a Sink (a way of saving data created or minimized).
+			Implements the worker interface and are the routines that do the actual computing within the distribution.
+            Generally speaking a single distribution will consist of a Source (inputs data into the distribution), a
+            Worker of some sort (thought of as a bolt in Apache's Storm), and a Sink (a way of saving data created or
+            minimized).
 		</p>
 
 		<h3>Connector</h3>
