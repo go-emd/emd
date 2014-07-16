@@ -8,5 +8,5 @@ package core
  *
  */
 type Core struct {
-	Name string
+	Name_ string
 }

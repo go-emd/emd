@@ -22,6 +22,11 @@ type ExternalUDPIngress struct {
 	Buf interface{}
 }
 
+func (e ExternalUDPIngress) Register(t interface{}) {
+	gob.Register(t)
+	e.Buf = t
+}
+
 func (e *ExternalUDPIngress) Channel() chan interface{} {
 	return e.Channel_
 }
@@ -51,13 +56,13 @@ func (e *ExternalUDPIngress) Open() {
 		}
 	}(e.Channel_)
 
-	log.INFO.Println("ExternalUDPIngress: connector " + e.Name + " is opened.")
+	log.INFO.Println("ExternalUDPIngress: connector " + e.Name_ + " is opened.")
 }
 
 func (e *ExternalUDPIngress) Close() {
 	//e.Conn.Close() // Only in TCP
 	//close(e.Channel) // Will be garbage collected
-	log.INFO.Println("ExternalUDPIngress: connector " + e.Name + " is closed.")
+	log.INFO.Println("ExternalUDPIngress: connector " + e.Name_ + " is closed.")
 }
 
 // Client
@@ -96,11 +101,11 @@ func (e *ExternalUDPEgress) Open() {
 		}
 	}(e.Channel_)
 
-	log.INFO.Println("ExternalUDPEgress: connector " + e.Name + " is opened.")
+	log.INFO.Println("ExternalUDPEgress: connector " + e.Name_ + " is opened.")
 }
 
 func (e *ExternalUDPEgress) Close() {
 	//e.Conn.Close() // Only in TCP
 	//close(e.Channel) // Will be garbage collected
-	log.INFO.Println("ExternalUDPEgress: connector " + e.Name + " is closed.")
+	log.INFO.Println("ExternalUDPEgress: connector " + e.Name_ + " is closed.")
 }

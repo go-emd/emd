@@ -13,6 +13,7 @@ type Worker interface {
 	Init()
 	Run()
 	Ports() map[string]connector.Connector
+	Name() string
 }
 
 /*
@@ -27,4 +28,8 @@ type Work struct {
 
 func (w Work) Ports() map[string]connector.Connector {
 	return w.Ports_
+}
+
+func (w Work) Name() string {
+	return w.Name_
 }

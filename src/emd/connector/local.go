@@ -9,11 +9,11 @@ type Local struct {
 }
 
 func (l *Local) Open() {
-	log.INFO.Println("Local: " + l.Name + " is opened.")
+	log.INFO.Println("Local: " + l.Name_ + " is opened.")
 }
 
 func (l *Local) Close() {
-	log.INFO.Println("Local: " + l.Name + " is closed.")
+	log.INFO.Println("Local: " + l.Name_ + " is closed.")
 }
 
 func (l *Local) Channel() chan interface{} {
