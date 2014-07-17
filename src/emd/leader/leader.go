@@ -23,6 +23,7 @@ type Leader interface {
 	Stop(http.ResponseWriter, *http.Request)
 	Status(http.ResponseWriter, *http.Request)
 	Metrics(http.ResponseWriter, *http.Request)
+	Cache(http.ResponseWriter, *http.Request)
 }
 
 type Lead struct {
@@ -71,6 +72,7 @@ func (l *Lead) Run() {
 	http.HandleFunc("/stop", l.Stop)
 	http.HandleFunc("/status", l.Status)
 	http.HandleFunc("/metrics", l.Metrics)
+	http.HandleFunc("/cache", l.Cache)
 
 	http.ListenAndServe(":"+l.GUI_port, nil)
 }
@@ -182,6 +184,11 @@ func (l *Lead) Metrics(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	Respond(rw, true, metrics)
+	return
+}
+
+func (l *Lead) Cache(rw http.ResponseWriter, r *http.Request) {
+	Respond(rw, true, cache)
 	return
 }
 
