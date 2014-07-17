@@ -83,7 +83,49 @@
 
 		<h3>Connector</h3>
 		<p>
-			sad
+            <p>
+                There are a couple types of connectors, and a few more that could be implemented in
+                the future.  The purpose of the connector is to simply connect workers to each other.
+                They each implement the connector interface and require a channel for ingress types
+                and a channel for egress types.  Below are a list of the current connector
+                implementations and how they work.
+            </p>
+            <!--<img src="/emd/images/EMD_CONNECTOR.png" />-->
+            <p>
+                <ul>
+                    <li>
+                        <b>Local:</b>  Translates to a simple go channel of type
+                        interface{}.  It is meant to allow duplex communication between
+                        workers and can transfer any datatype.
+                    </li>
+                    <li>
+                        <b>ExternalIngress:</b>  This is more complicated.  The ExternalIngress
+                        connector is made up of a channel allowing only reading operations.
+                        Upon opening the connector it will open a socket for listening on from
+                        any host/device.  The information sent to it must be in the gob format
+                        and the connector will need to be given a type to decode the data
+                        received.
+                    </li>
+                    <li>
+                        <b>ExternalEgress:</b>  This connector is similar to the ExternalIngress
+                        except for the fact that it will only write to the channel and encode
+                        the data instead of decoding it.
+                    </li>
+                </ul>
+            </p>
+            <p>
+                <b>NOTE:</b>  It is important to note that the gob format is similar to the
+                google buffers encoding.  More information can be found
+                <a href="http://golang.org/pkg/encoding/gob/" target="_blank">here</a>.
+            </p>
+            <p>
+                Here are some helpful code references in order to implement a connector.
+                <ul>
+                    <li><a href="https://github.com/go-emd/emd/blob/master/src/emd/connector/connector.go" target="_blank">Connector interface</a></li>
+                    <li><a href="https://github.com/go-emd/emd/blob/master/src/emd/connector/external.go" target="_blank">Local connector</a></li>
+                    <li><a href="https://github.com/go-emd/emd/blob/master/src/emd/connector/local.go" target="_blank">External connectors</a></li>
+                </ul>
+            </p>
 		</p>
 	</div>
 </body>
