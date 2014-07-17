@@ -59,10 +59,26 @@
 
 		<h3>Worker</h3>
 		<p>
-			Implements the worker interface and are the routines that do the actual computing within the distribution.
-            Generally speaking a single distribution will consist of a Source (inputs data into the distribution), a
-            Worker of some sort (thought of as a bolt in Apache's Storm), and a Sink (a way of saving data created or
-            minimized).
+			<p>
+                Implements the worker interface and are the routines that do the actual computing within the distribution.
+                Generally speaking a single distribution will consist of a Source (inputs data into the distribution), a
+                Worker of some sort (thought of as a bolt in Apache's Storm), and a Sink (a way of saving data created or
+                minimized).
+            </p>
+            <img src="EMD_WORKER.png" />
+            <p>
+                Above is a diagram showing visually how a worker will work in most cases (dependant on distribution
+                specific implementations).  Workers are the go routines that do that actually work/processing on the
+                problem set.  Generally speaking each worker will have an input an output and will always have
+                another connection to the leader known as the management connection (MGMT).  More on connectors are
+                available below.
+            </p>
+            <p>
+                Here are some helpful code references in order to implement a worker.
+                <ul>
+                    <li><a href="https://github.com/go-emd/emd/blob/master/src/emd/worker/worker.go">Worker specification</a></li>
+                </ul>
+            </p>
 		</p>
 
 		<h3>Connector</h3>
