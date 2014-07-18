@@ -198,7 +198,7 @@ func (l *Lead) Cache(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (l *Lead) Config(rw http.ResponseWriter, r *http.Request) {
-	b, err := ioutil.ReadFile(l.ConfigPath) // TODO make abs path part of lead.
+	b, err := ioutil.ReadFile(l.ConfigPath)
 	if err != nil {
 		log.ERROR.Println("Unable to load config file.")
 	}
