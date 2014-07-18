@@ -7,6 +7,8 @@ import (
 	"emd/worker"
 	"net/http"
 	"os"
+	"encoding/json"
+	"io/ioutil"
 	"time"
 )
 
@@ -24,6 +26,7 @@ type Leader interface {
 	Status(http.ResponseWriter, *http.Request)
 	Metrics(http.ResponseWriter, *http.Request)
 	Cache(http.ResponseWriter, *http.Request)
+	Config(http.ResponseWriter, *http.Request)
 }
 
 type Lead struct {
@@ -73,6 +76,7 @@ func (l *Lead) Run() {
 	http.HandleFunc("/status", l.Status)
 	http.HandleFunc("/metrics", l.Metrics)
 	http.HandleFunc("/cache", l.Cache)
+	http.HandleFunc("/config", l.Config)
 
 	http.ListenAndServe(":"+l.GUI_port, nil)
 }
@@ -107,7 +111,7 @@ func (l *Lead) Stop(rw http.ResponseWriter, r *http.Request) {
 		for k, v := range l.Ports {
 			log.INFO.Println("Worker: " + k + "is stopping...")
 			v.Channel() <- "STOP"
-			// TODO: Use timeout to detect if worker acknowledged stopping request
+
 			tmp := cache.Workers[k]
 			tmp.State = "Stopped"
 			tmp.Timestamp = time.Now()
@@ -189,6 +193,23 @@ func (l *Lead) Metrics(rw http.ResponseWriter, r *http.Request) {
 
 func (l *Lead) Cache(rw http.ResponseWriter, r *http.Request) {
 	Respond(rw, true, cache)
+	return
+}
+
+func (l *Lead) Config(rw http.ResponseWriter, r *http.Request) {
+	b, err := ioutil.ReadFile("config.json") // TODO make abs path part of lead.
+	if err != nil {
+		log.ERROR.Println("Unable to load config file.")
+	}
+
+	var tmp interface{}
+
+	err = json.Unmarshal(b, &tmp)
+	if err != nil {
+		log.ERROR.Println("Unable to parse config file.")
+	}
+
+	Respond(rw, true, tmp)
 	return
 }
 
