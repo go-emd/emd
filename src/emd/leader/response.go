@@ -20,6 +20,7 @@ func (r Response) String() (s string) {
 }
 
 func Respond(rw http.ResponseWriter, success bool, message interface{}) {
+	rw.Header().Set("Access-Control-Allow-Origin", "*")
 	rw.Header().Set("Content-Type", "application/json")
 	fmt.Fprint(rw, Response{"success": success, "message": message})
 }
