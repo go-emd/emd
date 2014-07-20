@@ -94,9 +94,9 @@ func (l *Lead) Start(rw http.ResponseWriter, r *http.Request) {
 			tmp.State = "Running"
 			tmp.Timestamp = time.Now()
 			cache.Workers[w.Name()] = tmp
-
-			Respond(rw, true, "Workers started :-)")
 		}
+
+		Respond(rw, true, "Workers started :-)")
 	} else {
 		log.INFO.Println("Leader: " + l.Name_ + " workers are already running.")
 		Respond(rw, false, "Workers already started.")
