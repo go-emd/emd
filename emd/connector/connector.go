@@ -1,7 +1,7 @@
 package connector
 
 import (
-	"emd/core"
+	"../core"
 )
 
 type Connector interface {

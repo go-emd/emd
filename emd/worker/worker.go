@@ -1,8 +1,8 @@
 package worker
 
 import (
-	"emd/connector"
-	"emd/core"
+	"../connector"
+	"../core"
 )
 
 /*

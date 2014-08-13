@@ -1,10 +1,10 @@
 package leader
 
 import (
-	"emd/connector"
-	"emd/core"
-	"emd/log"
-	"emd/worker"
+	"../connector"
+	"../core"
+	"../log"
+	"../worker"
 	"net/http"
 	"os"
 	"encoding/json"

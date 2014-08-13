@@ -1,7 +1,7 @@
 package connector
 
 import (
-	"emd/log"
+	"../log"
 )
 
 type Local struct {
