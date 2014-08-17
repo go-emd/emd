@@ -1,7 +1,7 @@
 package connector
 
 import (
-	"../log"
+	"github.com/go-emd/emd/log"
 	"encoding/gob"
 	"net"
 )

@@ -1,10 +1,10 @@
 package leader
 
 import (
-	"../connector"
-	"../core"
-	"../log"
-	"../worker"
+	"github.com/go-emd/emd/connector"
+	"github.com/go-emd/emd/core"
+	"github.com/go-emd/emd/log"
+	"github.com/go-emd/emd/worker"
 	"net/http"
 	"os"
 	"encoding/json"

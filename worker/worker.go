@@ -1,8 +1,8 @@
 package worker
 
 import (
-	"../connector"
-	"../core"
+	"github.com/go-emd/emd/connector"
+	"github.com/go-emd/emd/core"
 )
 
 /*

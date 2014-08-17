@@ -1,7 +1,7 @@
 package connector
 
 import (
-	"../core"
+	"github.com/go-emd/emd/core"
 )
 
 type Connector interface {
