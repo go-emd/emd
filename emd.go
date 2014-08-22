@@ -108,7 +108,7 @@ func createLeader(lPath string, node config.NodeConfig, guiPort, cPath string) e
  *
  */
 func buildLeader(path, hostname string) (string, error) {
-	out, err := exec.Command("go", "build", "-o", filepath.Join(path, "bin", hostname), filepath.Join(path, hostname+".go")).Output()
+	out, err := exec.Command("go", "build", "-o", filepath.Join(path, "bin", hostname), filepath.Join(path, hostname+".go")).CombinedOutput()
 
 	return string(out), err
 }
@@ -154,11 +154,13 @@ func compile() {
 		
 		log.INFO.Println("Leader "+n.Hostname+" compiled successfully")
 		
-		_, err = buildLeader(filepath.Join(path, "leaders"), n.Hostname)
+		out, err := buildLeader(filepath.Join(path, "leaders"), n.Hostname)
 		if err != nil {
+			log.ERROR.Println(out)
 			log.ERROR.Println(err)
 			os.Exit(1)
 		}
+		if out != "" { log.INFO.Println(out) }
 		log.INFO.Println("Leader "+n.Hostname+" built successfully")
 	}
 	
