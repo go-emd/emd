@@ -1,9 +1,13 @@
 package main
 
 import (
-	config "github.com/go-emd/emd/config"
-
+	"github.com/go-emd/emd/config"
 	"github.com/go-emd/emd/log"
+	"code.google.com/p/go.crypto/ssh"
+	"github.com/howeyc/gopass"
+	"fmt"
+	"strings"
+	"bytes"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -46,12 +50,23 @@ func parseProject(path string) string {
 
 	i := len(path)-1
 	for {
-		if path[i] == os.PathSeparator { return name }
+		if path[i] == os.PathSeparator { return reverseString(name) }
 		if i < 0 { return "" }
 
 		name = name + string(path[i])
 		i = i-1
 	}
+}
+
+// Helper func
+func reverseString(name string) string {
+	reverse := ""
+	
+	for i := len(name)-1; i >= 0; i-- {
+		reverse = reverse + string(name[i])
+	}
+	
+	return reverse
 }
 
 /*
@@ -107,18 +122,18 @@ func compile() {
 	path := ""
 
 	if len(os.Args) == 0 || len(os.Args) > 2 {
-		log.ERROR.Println("Usage: go-emd compile --path <path to dir containing config.json>")
-		log.ERROR.Println("Usage: go-emd compile --help")
+		log.ERROR.Println("Usage: emd compile --path <path to dir containing config.json>")
+		log.ERROR.Println("Usage: emd compile --help")
 		os.Exit(1)
 	} else if os.Args[0] == "--help" || os.Args[0] == "-h" || os.Args[0] == "help" {
-		log.INFO.Println("Usage: go-emd compile --path <path to dir containing config.json>")
-		log.INFO.Println("Usage: go-emd compile --help")
+		log.INFO.Println("Usage: emd compile --path <path to dir containing config.json>")
+		log.INFO.Println("Usage: emd compile --help")
 		os.Exit(1)
 	} else if os.Args[0] == "--path" || os.Args[0] == "-p" && len(os.Args) == 2 {
 		path = os.Args[1]
 	} else {
-		log.ERROR.Println("Usage: go-emd compile --path <path to dir containing config.json>")
-		log.ERROR.Println("Usage: go-emd compile --help")
+		log.ERROR.Println("Usage: emd compile --path <path to dir containing config.json>")
+		log.ERROR.Println("Usage: emd compile --help")
 		os.Exit(1)
 	}
 
@@ -159,18 +174,18 @@ func clean() {
 	path := ""
 
 	if len(os.Args) == 0 || len(os.Args) > 2 {
-		log.ERROR.Println("Usage: go-emd clean --path <path to dir containing config.json>")
-		log.ERROR.Println("Usage: go-emd clean --help")
+		log.ERROR.Println("Usage: emd clean --path <path to dir containing config.json>")
+		log.ERROR.Println("Usage: emd clean --help")
 		os.Exit(1)
 	} else if os.Args[0] == "--help" || os.Args[0] == "-h" || os.Args[0] == "help" {
-		log.INFO.Println("Usage: go-emd clean --path <path to dir containing config.json>")
-		log.INFO.Println("Usage: go-emd clean --help")
+		log.INFO.Println("Usage: emd clean --path <path to dir containing config.json>")
+		log.INFO.Println("Usage: emd clean --help")
 		os.Exit(1)
 	} else if os.Args[0] == "--path" || os.Args[0] == "-p" && len(os.Args) == 2 {
 		path = os.Args[1]
 	} else {
-		log.ERROR.Println("Usage: go-emd clean --path <path to dir containing config.json>")
-		log.ERROR.Println("Usage: go-emd clean --help")
+		log.ERROR.Println("Usage: emd clean --path <path to dir containing config.json>")
+		log.ERROR.Println("Usage: emd clean --help")
 		os.Exit(1)
 	}
 
@@ -205,12 +220,12 @@ func distribute() {
 	path := ""
 
 	if len(os.Args) == 0 || len(os.Args) > 2 {
-		log.ERROR.Println("Usage: go-emd distribute --path <path to dir containing config.json>")
-		log.ERROR.Println("Usage: go-emd distribute --help")
+		log.ERROR.Println("Usage: emd distribute --path <path to dir containing config.json>")
+		log.ERROR.Println("Usage: emd distribute --help")
 		os.Exit(1)
 	} else if os.Args[0] == "--help" || os.Args[0] == "-h" || os.Args[0] == "help" {
-		log.INFO.Println("Usage: go-emd distribute --path <path to dir containing config.json>")
-		log.INFO.Println("Usage: go-emd distribute --help")
+		log.INFO.Println("Usage: emd distribute --path <path to dir containing config.json>")
+		log.INFO.Println("Usage: emd distribute --help")
 		os.Exit(1)
 	} else if os.Args[0] == "--path" || os.Args[0] == "-p" && len(os.Args) == 2 {
 		path = os.Args[1]
@@ -220,8 +235,8 @@ func distribute() {
 			path = path[:len(path)-1]
 		}
 	} else {
-		log.ERROR.Println("Usage: go-emd distribute --path <path to dir containing config.json>")
-		log.ERROR.Println("Usage: go-emd distribute --help")
+		log.ERROR.Println("Usage: emd distribute --path <path to dir containing config.json>")
+		log.ERROR.Println("Usage: emd distribute --help")
 		os.Exit(1)
 	}
 
@@ -255,12 +270,12 @@ func start() {
 	path := ""
 
 	if len(os.Args) == 0 || len(os.Args) > 2 {
-		log.ERROR.Println("Usage: go-emd start --path <path to dir containing config.json>")
-		log.ERROR.Println("Usage: go-emd start --help")
+		log.ERROR.Println("Usage: emd start --path <path to dir containing config.json>")
+		log.ERROR.Println("Usage: emd start --help")
 		os.Exit(1)
 	} else if os.Args[0] == "--help" || os.Args[0] == "-h" || os.Args[0] == "help" {
-		log.INFO.Println("Usage: go-emd start --path <path to dir containing config.json>")
-		log.INFO.Println("Usage: go-emd start --help")
+		log.INFO.Println("Usage: emd start --path <path to dir containing config.json>")
+		log.INFO.Println("Usage: emd start --help")
 		os.Exit(1)
 	} else if os.Args[0] == "--path" || os.Args[0] == "-p" && len(os.Args) == 2 {
 		path = os.Args[1]
@@ -270,8 +285,8 @@ func start() {
 			path = path[:len(path)-1]
 		}
 	} else {
-		log.ERROR.Println("Usage: go-emd start --path <path to dir containing config.json>")
-		log.ERROR.Println("Usage: go-emd start --help")
+		log.ERROR.Println("Usage: emd start --path <path to dir containing config.json>")
+		log.ERROR.Println("Usage: emd start --help")
 		os.Exit(1)
 	}
 
@@ -284,8 +299,8 @@ func start() {
 	projectName := parseProject(path)
 	if projectName == "" {
 		log.ERROR.Println("Unable to parse distribution name from path.")
-		log.ERROR.Println("Usage: go-emd start --path <path to dir containing config.json>")
-		log.ERROR.Println("Usage: go-emd start --help")
+		log.ERROR.Println("Usage: emd start --path <path to dir containing config.json>")
+		log.ERROR.Println("Usage: emd start --help")
 		os.Exit(1)
 	}
 
@@ -294,8 +309,31 @@ func start() {
 
 	for _, n := range cfg.Nodes{
 		log.INFO.Println("Starting leader on "+n.Hostname)
-		_, err := exec.Command("ssh", "-n", "-f", user.Username+"@"+n.Hostname, "\"sh -c 'nohup "+filepath.Join(os.TempDir(), projectName, "leaders", "bin", n.Hostname)+" > "+ os.DevNull +" 2>&1 &'\"").Output()
+		fmt.Printf(user.Username+"@"+n.Hostname+"'s password: ")
+		password := gopass.GetPasswd()
+
+		config := &ssh.ClientConfig{
+			User: user.Username,
+			Auth: []ssh.AuthMethod{
+				ssh.Password(string(password)),
+			},
+		}
+		client, err := ssh.Dial("tcp", n.Hostname+":22", config)
 		if err != nil {
+			log.ERROR.Println(err)
+			os.Exit(1)
+		}
+		
+		session, err := client.NewSession()
+		if err != nil {
+			log.ERROR.Println(err)
+			os.Exit(1)
+		}
+		defer session.Close()
+	
+		var b bytes.Buffer
+		session.Stdout = &b
+		if err := session.Run("nohup "+filepath.Join(os.TempDir(), projectName, "leaders", "bin", n.Hostname)+" > "+os.DevNull+" &"); err != nil {
 			log.ERROR.Println(err)
 			os.Exit(1)
 		}
@@ -313,12 +351,12 @@ func stop() {
 	path := ""
 
 	if len(os.Args) == 0 || len(os.Args) > 2 {
-		log.ERROR.Println("Usage: go-emd stop --path <path to dir containing config.json>")
-		log.ERROR.Println("Usage: go-emd stop --help")
+		log.ERROR.Println("Usage: emd stop --path <path to dir containing config.json>")
+		log.ERROR.Println("Usage: emd stop --help")
 		os.Exit(1)
 	} else if os.Args[0] == "--help" || os.Args[0] == "-h" || os.Args[0] == "help" {
-		log.INFO.Println("Usage: go-emd stop --path <path to dir containing config.json>")
-		log.INFO.Println("Usage: go-emd stop --help")
+		log.INFO.Println("Usage: emd stop --path <path to dir containing config.json>")
+		log.INFO.Println("Usage: emd stop --help")
 		os.Exit(1)
 	} else if os.Args[0] == "--path" || os.Args[0] == "-p" && len(os.Args) == 2 {
 		path = os.Args[1]
@@ -328,8 +366,8 @@ func stop() {
 			path = path[:len(path)-1]
 		}
 	} else {
-		log.ERROR.Println("Usage: go-emd stop --path <path to dir containing config.json>")
-		log.ERROR.Println("Usage: go-emd stop --help")
+		log.ERROR.Println("Usage: emd stop --path <path to dir containing config.json>")
+		log.ERROR.Println("Usage: emd stop --help")
 		os.Exit(1)
 	}
 	
@@ -351,6 +389,7 @@ func stop() {
 		// Stop the leader
 		_, err = http.Get("http://"+n.Hostname+":"+cfg.GUI_port+"/stop")
 		if err != nil {
+			if strings.Contains(err.Error(), "EOF") { continue }
 			log.ERROR.Println(err)
 			os.Exit(1)
 		}
@@ -368,12 +407,12 @@ func status() {
 	path := ""
 
 	if len(os.Args) == 0 || len(os.Args) > 2 {
-		log.ERROR.Println("Usage: go-emd status --path <path to dir containing config.json>")
-		log.ERROR.Println("Usage: go-emd status --help")
+		log.ERROR.Println("Usage: emd status --path <path to dir containing config.json>")
+		log.ERROR.Println("Usage: emd status --help")
 		os.Exit(1)
 	} else if os.Args[0] == "--help" || os.Args[0] == "-h" || os.Args[0] == "help" {
-		log.INFO.Println("Usage: go-emd status --path <path to dir containing config.json>")
-		log.INFO.Println("Usage: go-emd status --help")
+		log.INFO.Println("Usage: emd status --path <path to dir containing config.json>")
+		log.INFO.Println("Usage: emd status --help")
 		os.Exit(1)
 	} else if os.Args[0] == "--path" || os.Args[0] == "-p" && len(os.Args) == 2 {
 		path = os.Args[1]
@@ -383,8 +422,8 @@ func status() {
 			path = path[:len(path)-1]
 		}
 	} else {
-		log.ERROR.Println("Usage: go-emd status --path <path to dir containing config.json>")
-		log.ERROR.Println("Usage: go-emd status --help")
+		log.ERROR.Println("Usage: emd status --path <path to dir containing config.json>")
+		log.ERROR.Println("Usage: emd status --help")
 		os.Exit(1)
 	}
 	
@@ -400,7 +439,13 @@ func status() {
 			os.Exit(1)
 		}
 		
-		log.INFO.Println(resp)
+		content, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.ERROR.Println(err)
+			os.Exit(1)
+		}
+		log.INFO.Println(string(content))
+		resp.Body.Close()
 	}
 
 	log.INFO.Println("Status successful")
@@ -415,12 +460,12 @@ func metrics() {
 	path := ""
 
 	if len(os.Args) == 0 || len(os.Args) > 2 {
-		log.ERROR.Println("Usage: go-emd metrics --path <path to dir containing config.json>")
-		log.ERROR.Println("Usage: go-emd metrics --help")
+		log.ERROR.Println("Usage: emd metrics --path <path to dir containing config.json>")
+		log.ERROR.Println("Usage: emd metrics --help")
 		os.Exit(1)
 	} else if os.Args[0] == "--help" || os.Args[0] == "-h" || os.Args[0] == "help" {
-		log.INFO.Println("Usage: go-emd metrics --path <path to dir containing config.json>")
-		log.INFO.Println("Usage: go-emd metrics --help")
+		log.INFO.Println("Usage: emd metrics --path <path to dir containing config.json>")
+		log.INFO.Println("Usage: emd metrics --help")
 		os.Exit(1)
 	} else if os.Args[0] == "--path" || os.Args[0] == "-p" && len(os.Args) == 2 {
 		path = os.Args[1]
@@ -430,8 +475,8 @@ func metrics() {
 			path = path[:len(path)-1]
 		}
 	} else {
-		log.ERROR.Println("Usage: go-emd metrics --path <path to dir containing config.json>")
-		log.ERROR.Println("Usage: go-emd metrics --help")
+		log.ERROR.Println("Usage: emd metrics --path <path to dir containing config.json>")
+		log.ERROR.Println("Usage: emd metrics --help")
 		os.Exit(1)
 	}
 	
@@ -446,8 +491,14 @@ func metrics() {
 			log.ERROR.Println(err)
 			os.Exit(1)
 		}
-		
-		log.INFO.Println(resp)
+
+		content, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.ERROR.Println(err)
+			os.Exit(1)
+		}
+		log.INFO.Println(string(content))
+		resp.Body.Close()
 	}
 
 	log.INFO.Println("Metrics successful")
@@ -480,7 +531,7 @@ func main() {
 	if len(os.Args) >= 2 {
 		action = os.Args[1]
 	} else {
-		log.ERROR.Println("Usage: go-emd <action> args {new|compile|clean|distribute|start|stop|status|metrics}")
+		log.ERROR.Println("Usage: emd <action> args {new|compile|clean|distribute|start|stop|status|metrics}")
 		os.Exit(1)
 	}
 
@@ -512,7 +563,7 @@ func main() {
 		metrics()
 	default:
 		log.ERROR.Println("Invalid action.")
-		log.ERROR.Println("Usage: go-emd <action> args {new|compile|clean|distribute|start|stop|status|metrics}")
+		log.ERROR.Println("Usage: emd <action> args {new|compile|clean|distribute|start|stop|status|metrics}")
 		os.Exit(1)
 	}
 }
