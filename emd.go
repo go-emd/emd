@@ -1,3 +1,37 @@
+/*
+	emd - Contains utilities that allow users to create new emd 
+	projects, compile, distribute, start, and monitor on multiple machines.
+	
+	The commands available through this executable are:
+	
+	emd new: Performs a git clone of a boilerplate repository that is 
+	already set up to run on a distribution therefore allowing quick 
+	and painless starting of projects.
+	
+	emd compile --path <path to folder containing distribution>: Will 
+	compile a distribution project by first parsing the config.json 
+	file creating node leader go files then building them with 
+	"go build".
+	
+	emd distribute --path <path to folder containing distribution>: Distributes 
+	the distribution using the "rsync" command into the tmp directory of the machine.
+	
+	emd start --path <path to folder containing distribution>: Starts the 
+	distribution by ssh'ing to each individual node in the distribution 
+	and starting is node leader in the background.  NOTE: running the compile and 
+	distribute commands will need to be done before this one.
+	
+	emd stop --path <path to folder containing distribution>: Stops the distribution 
+	by sending REST calls to the endpoints of each node leader in the distribution 
+	therefore killing each process and affectively stopping it.
+	
+	emd status --path <path to folder containing distribution>: Returns the status 
+	of the distribution when running in json format.  It will either be "Healthy", 
+	"Unhealthy" or "Unknown"
+	
+	emd metrics --path <path to folder containing distribution>: Returns the metrics 
+	created by the distribution that is running in json format.
+*/
 package main
 
 import (
@@ -8,6 +42,7 @@ import (
 	"fmt"
 	"strings"
 	"bytes"
+	"runtime"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -17,30 +52,36 @@ import (
 	"text/template"
 )
 
-// Helper func for template string equality check
+// eq: Is used to allow boolean logic between string using a 
+// template leader file.
 func eq(s1, s2 string) bool {
 	return s1 == s2
 }
 
-// Helper func to assign external ports correctly
+// Contains currently used port when assigning them during 
+// the compilations of the template leader file.
 var externalPorts map[string]int
 var currentExtPort int
 
+// getPort: Is used to lookup if a port is already been 
+// assigned for a particular connection if so then use 
+// that port, if not then assign a new one.
 func getPort(alias string) int {
-	// Check if alias is already assigned
 	for k, v := range externalPorts {
 		if k == alias {
 			return v
 		}
 	}
 
-	// Add a new alias entry external ports map
 	externalPorts[alias] = currentExtPort
 	currentExtPort += 1
 	return externalPorts[alias]
 }
 
-// Helper func to get project name from path given
+// parseProject: Takes a file path string and searches 
+// it backwards to reveal the project name being dealt 
+// with.  It then re-reverses the project name to be 
+// in the correct order.
 func parseProject(path string) string {
 	name := ""
 
@@ -58,7 +99,7 @@ func parseProject(path string) string {
 	}
 }
 
-// Helper func
+// reverseString: Reverses a string' characters and returns it.
 func reverseString(name string) string {
 	reverse := ""
 	
@@ -69,11 +110,8 @@ func reverseString(name string) string {
 	return reverse
 }
 
-/*
- *
- * Create node specific leader files.
- *
- */
+// createLeader: Creates node specific leader files by building them 
+// using the leader.template file.
 func createLeader(lPath string, node config.NodeConfig, guiPort, cPath string) error {
 	type tType struct {
 		Node    config.NodeConfig
@@ -102,11 +140,7 @@ func createLeader(lPath string, node config.NodeConfig, guiPort, cPath string) e
 	return nil
 }
 
-/*
- *
- * Build node specific leader with "go build"
- *
- */
+// buildLeader: Runs "go build" on each node leader to get the executable.
 func buildLeader(path, hostname string) (string, error) {
 	out, err := exec.Command("go", "build", "-o", filepath.Join(path, "bin", hostname), filepath.Join(path, hostname+".go")).CombinedOutput()
 
@@ -309,10 +343,28 @@ func start() {
 	var cfg config.Config
 	config.Process(filepath.Join(path, "config.json"), &cfg)
 
+	passwdAnswered := false
+	useSamePasswd := false
+	var password []byte
+
 	for _, n := range cfg.Nodes{
 		log.INFO.Println("Starting leader on "+n.Hostname)
-		fmt.Printf(user.Username+"@"+n.Hostname+"'s password: ")
-		password := gopass.GetPasswd()
+
+		if !useSamePasswd {
+			fmt.Printf(user.Username+"@"+n.Hostname+"'s password: ")
+			password = gopass.GetPasswd()
+
+			if !passwdAnswered {
+				passwdAnswered = true
+				var ans string
+			
+				fmt.Printf("Is this password the same for all nodes (y/n): ")
+				fmt.Scanf("%s", &ans)
+				if strings.ToUpper(ans) == "Y" {
+					useSamePasswd = true
+				}
+			}
+		}
 
 		config := &ssh.ClientConfig{
 			User: user.Username,
@@ -335,7 +387,15 @@ func start() {
 	
 		var b bytes.Buffer
 		session.Stdout = &b
-		if err := session.Run("nohup "+filepath.Join(os.TempDir(), projectName, "leaders", "bin", n.Hostname)+" > "+os.DevNull+" &"); err != nil {
+		
+		var cmd string
+		if runtime.GOOS == "windows" {
+			cmd = "start /B"+filepath.Join(os.TempDir(), projectName, "leaders", "bin", n.Hostname)+" > "+os.DevNull
+		} else {
+			cmd = "nohup "+filepath.Join(os.TempDir(), projectName, "leaders", "bin", n.Hostname)+" > "+os.DevNull+" 2>&1 &"
+		}
+
+		if err := session.Run(cmd); err != nil {
 			log.ERROR.Println(err)
 			os.Exit(1)
 		}

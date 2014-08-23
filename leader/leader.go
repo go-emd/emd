@@ -1,3 +1,10 @@
+/*
+	A leader is a process that run's in the background 
+	of a node in an emd distribution.  There can only be 
+	one node leader per node per distribution.  The node 
+	leader contains all the connections, workers, REST 
+	endpoints, and monitors all of them.
+ */
 package leader
 
 import (
@@ -12,10 +19,16 @@ import (
 	"time"
 )
 
+// The cache.Cache variable keeps a constant rolling cache 
+// of each job/connection's metrics, status, state, and when 
+// the last time was it was updated.
 var (
 	cache *Cache
 )
 
+// Every leader must implement the leader.Leader interface 
+// allowing it to initialize, run, exit and handle REST 
+// requests.
 type Leader interface {
 	Init()
 	Run()
@@ -29,6 +42,11 @@ type Leader interface {
 	Config(http.ResponseWriter, *http.Request)
 }
 
+// Each leader implementation must inherit the leader.Lead 
+// struct to get information such as its name, the REST 
+// ports to listen on, configuration file path, the workers 
+// its supposed to monitor and maintain and the management 
+// connections (or ports) the leader has with each worker.
 type Lead struct {
 	core.Core
 	GUI_port string
@@ -37,6 +55,8 @@ type Lead struct {
 	Ports    map[string]connector.Connector
 }
 
+// Initializes the leader and each of its workers, 
+// creates a new cache and initializes each entry.
 func (l *Lead) Init() {
 	for _, w := range l.Workers {
 		w.Init()
@@ -58,6 +78,9 @@ func (l *Lead) Init() {
 	log.INFO.Println("Leader: " + l.Name_ + " is initialized.")
 }
 
+// Starts each worker in its own separate go routine and 
+// spins up the REST server to handle monitoring and metrics 
+// requests.
 func (l *Lead) Run() {
 	log.INFO.Println("Leader: " + l.Name_ + " is running...")
 
@@ -82,6 +105,8 @@ func (l *Lead) Run() {
 	http.ListenAndServe(":"+l.GUI_port, nil)
 }
 
+// A REST endpoint that will handle the status request and 
+// respond with the health of each worker in the node.
 func (l *Lead) Start(rw http.ResponseWriter, r *http.Request) {
 	if allWorkersStopped() {
 		log.INFO.Println("Leader: " + l.Name_ + " is starting it' workers...")
@@ -105,6 +130,10 @@ func (l *Lead) Start(rw http.ResponseWriter, r *http.Request) {
 	return
 }
 
+// A REST endpoint that handles the stop request.  It will 
+// stop all the workers in the node and when a second stop 
+// request happens the node leader will exit if all the workers 
+// are already stopped.
 func (l *Lead) Stop(rw http.ResponseWriter, r *http.Request) {
 	if !allWorkersStopped() {
 		log.INFO.Println("Leader: " + l.Name_ + " is stopping...")
@@ -128,6 +157,10 @@ func (l *Lead) Stop(rw http.ResponseWriter, r *http.Request) {
 	return
 }
 
+// A REST endpoint that handles the status request, it will 
+// return each workers status depending on if the timeout 
+// of two seconds happens then it will send the Unknown 
+// status.
 func (l *Lead) Status(rw http.ResponseWriter, r *http.Request) {
 	for k, v := range l.Ports {
 		v.Channel() <- "STATUS"
@@ -166,6 +199,10 @@ func (l *Lead) Status(rw http.ResponseWriter, r *http.Request) {
 	return
 }
 
+// A REST endpoint that handles the metrics request.  It will 
+// return a json serialized structure of a map containing an 
+// interface.  All the metrics are specified by each worker 
+// separately.
 func (l *Lead) Metrics(rw http.ResponseWriter, r *http.Request) {
 	metrics := make(map[string]interface{})
 
@@ -192,11 +229,18 @@ func (l *Lead) Metrics(rw http.ResponseWriter, r *http.Request) {
 	return
 }
 
+// A REST endpoint that will return the current cache that the 
+// leader has.  This is useful to see if anything wrong is 
+// happening in the distribution.
 func (l *Lead) Cache(rw http.ResponseWriter, r *http.Request) {
 	Respond(rw, true, cache)
 	return
 }
 
+// A REST endpoint that will return the config file being 
+// used by the node leader.  This is most useful for any 
+// GUI's that want to gather information about the distribution 
+// as a whole.
 func (l *Lead) Config(rw http.ResponseWriter, r *http.Request) {
 	b, err := ioutil.ReadFile(l.ConfigPath)
 	if err != nil {
@@ -214,11 +258,17 @@ func (l *Lead) Config(rw http.ResponseWriter, r *http.Request) {
 	return
 }
 
+// The last function a leader will call.  Currently just 
+// uses os.Exit to quit.
 func (l *Lead) Exit() {
 	log.INFO.Println("Leader: " + l.Name_ + " is stopped.")
 	os.Exit(0)
 }
 
+// Private function used to detect is all the workers are 
+// currently stopped or not.  This is used by the leader.Stop 
+// function to tell if the workers need to be stopped or 
+// the leader needs to exit.
 func allWorkersStopped() bool {
 	for _, v := range cache.Workers {
 		if v.State == "Stopped" {

@@ -1,3 +1,10 @@
+/*
+	This package simply instantiates a logging 
+	mechanism based on the go log package.  This does 
+	not use log rolling.  It is expected that the log 
+	rolling will be done in the leader implementation 
+	where the logging is first instantiated.
+*/
 package log
 
 import (
@@ -5,11 +12,8 @@ import (
 	"log"
 )
 
-/*
- *
- * Logging
- *
- */
+// The log package allows four types of logging, 
+// the TRACE, INFO, WARNING, and ERROR logging.
 var (
 	TRACE   *log.Logger
 	INFO    *log.Logger
@@ -17,6 +21,12 @@ var (
 	ERROR   *log.Logger
 )
 
+// Called in the node leader in order to set 
+// the io.Writer's the logger should be writing 
+// too.  The default is to stdout and stderr.  
+// But this should be changed to a file to hold the 
+// logs which then gets rolled over time such that 
+// the memory doesn't get lost.
 func Init(
 	traceHandle io.Writer,
 	infoHandle io.Writer,
