@@ -82,7 +82,7 @@ func getPort(alias string) int {
 // it backwards to reveal the project name being dealt 
 // with.  It then re-reverses the project name to be 
 // in the correct order.
-func parseProject(path string) string {
+func ParseProject(path string) string {
 	name := ""
 
 	if path[len(path)-1] == os.PathSeparator {
@@ -91,7 +91,7 @@ func parseProject(path string) string {
 
 	i := len(path)-1
 	for {
-		if path[i] == os.PathSeparator { return reverseString(name) }
+		if path[i] == os.PathSeparator { return ReverseString(name) }
 		if i < 0 { return "" }
 
 		name = name + string(path[i])
@@ -100,7 +100,7 @@ func parseProject(path string) string {
 }
 
 // reverseString: Reverses a string' characters and returns it.
-func reverseString(name string) string {
+func ReverseString(name string) string {
 	reverse := ""
 	
 	for i := len(name)-1; i >= 0; i-- {
@@ -112,7 +112,7 @@ func reverseString(name string) string {
 
 // createLeader: Creates node specific leader files by building them 
 // using the leader.template file.
-func createLeader(lPath string, node config.NodeConfig, guiPort, cPath string) error {
+func CreateLeader(lPath string, node config.NodeConfig, guiPort, cPath string) error {
 	type tType struct {
 		Node    config.NodeConfig
 		GuiPort string
@@ -141,7 +141,7 @@ func createLeader(lPath string, node config.NodeConfig, guiPort, cPath string) e
 }
 
 // buildLeader: Runs "go build" on each node leader to get the executable.
-func buildLeader(path, hostname string) (string, error) {
+func BuildLeader(path, hostname string) (string, error) {
 	out, err := exec.Command("go", "build", "-o", filepath.Join(path, "bin", hostname), filepath.Join(path, hostname+".go")).CombinedOutput()
 
 	return string(out), err
@@ -152,7 +152,7 @@ func buildLeader(path, hostname string) (string, error) {
  * Compiles and builds the distribution leader files.
  *
  */
-func compile() {
+func Compile() {
 	path := ""
 
 	if len(os.Args) == 0 || len(os.Args) > 2 {
@@ -180,7 +180,7 @@ func compile() {
 	//   leader files for each, then build them 
 	//   placing them into the /leaders/bin dir.
 	for _, n := range cfg.Nodes {
-		err := createLeader(filepath.Join(path, "leaders"), n, cfg.GUI_port, filepath.Join(path, "config.json"))
+		err := CreateLeader(filepath.Join(path, "leaders"), n, cfg.GUI_port, filepath.Join(path, "config.json"))
 		if err != nil {
 			log.ERROR.Println(err)
 			os.Exit(1)
@@ -188,7 +188,7 @@ func compile() {
 		
 		log.INFO.Println("Leader "+n.Hostname+" compiled successfully")
 		
-		out, err := buildLeader(filepath.Join(path, "leaders"), n.Hostname)
+		out, err := BuildLeader(filepath.Join(path, "leaders"), n.Hostname)
 		if err != nil {
 			log.ERROR.Println(out)
 			log.ERROR.Println(err)
@@ -206,7 +206,7 @@ func compile() {
  * Cleans and removes leader files and executables.
  *
  */
-func clean() {
+func Clean() {
 	path := ""
 
 	if len(os.Args) == 0 || len(os.Args) > 2 {
@@ -252,7 +252,7 @@ func clean() {
  * Rsync must be installed in order to distribute the distribution.
  *
  */
-func distribute() {
+func Distribute() {
 	path := ""
 
 	if len(os.Args) == 0 || len(os.Args) > 2 {
@@ -302,7 +302,7 @@ func distribute() {
  * Start the distribution given the path to it on each node.
  *
  */
-func start() {
+func Start() {
 	path := ""
 
 	if len(os.Args) == 0 || len(os.Args) > 2 {
@@ -332,7 +332,7 @@ func start() {
 		os.Exit(1)
 	}
 
-	projectName := parseProject(path)
+	projectName := ParseProject(path)
 	if projectName == "" {
 		log.ERROR.Println("Unable to parse distribution name from path.")
 		log.ERROR.Println("Usage: emd start --path <path to dir containing config.json>")
@@ -409,7 +409,7 @@ func start() {
  * Perform GET request to stop distribution.
  *
  */
-func stop() {
+func Stop() {
 	path := ""
 
 	if len(os.Args) == 0 || len(os.Args) > 2 {
@@ -465,7 +465,7 @@ func stop() {
  * Perform GET request to get status of distribution.
  *
  */
-func status() {
+func Status() {
 	path := ""
 
 	if len(os.Args) == 0 || len(os.Args) > 2 {
@@ -518,7 +518,7 @@ func status() {
  * Perform GET request to get metrics of distribution.
  *
  */
-func metrics() {
+func Metrics() {
 	path := ""
 
 	if len(os.Args) == 0 || len(os.Args) > 2 {
@@ -572,7 +572,7 @@ func metrics() {
  *    distribution contents into projectName directory.
  *
  */
-func newProject() {
+func NewProject() {
 	log.INFO.Println("Creating new distribution")
 
 	// Copy boilerplate/* stuff into the path/name given.
@@ -601,28 +601,28 @@ func main() {
 
 	switch action {
 	case "new":
-		newProject()
+		NewProject()
 	case "compile":
 		log.INFO.Println("Performing: compile")
-		compile()
+		Compile()
 	case "clean":
 		log.INFO.Println("Performing: clean")
-		clean()
+		Clean()
 	case "distribute":
 		log.INFO.Println("Performing: distribute")
-		distribute()
+		Distribute()
 	case "start":
 		log.INFO.Println("Performing: start")
-		start()
+		Start()
 	case "stop":
 		log.INFO.Println("Performing: stop")
-		stop()
+		Stop()
 	case "status":
 		log.INFO.Println("Performing: status")
-		status()
+		Status()
 	case "metrics":
 		log.INFO.Println("Performing: metrics")
-		metrics()
+		Metrics()
 	default:
 		log.ERROR.Println("Invalid action.")
 		log.ERROR.Println("Usage: emd <action> args {new|compile|clean|distribute|start|stop|status|metrics}")
