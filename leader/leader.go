@@ -140,10 +140,16 @@ func (l *Lead) Stop(rw http.ResponseWriter, r *http.Request) {
 
 		for k, v := range l.Ports {
 			log.INFO.Println("Worker: " + k + "is stopping...")
-			v.Channel() <- "STOP"
-
+			
 			tmp := cache.Workers[k]
-			tmp.State = "Stopped"
+			
+			if writeChannel(v.Channel(), "STOP"){
+				tmp.State = "Stopped"
+			} else {
+				log.WARNING.Println("Unable to stop worker " + k)
+				tmp.State = "Unknown"
+			}
+
 			tmp.Timestamp = time.Now()
 			cache.Workers[k] = tmp
 		}
@@ -163,11 +169,37 @@ func (l *Lead) Stop(rw http.ResponseWriter, r *http.Request) {
 // status.
 func (l *Lead) Status(rw http.ResponseWriter, r *http.Request) {
 	for k, v := range l.Ports {
-		v.Channel() <- "STATUS"
 		tmp := cache.Workers[k]
+		var status interface{}
 
-		select {
-		case <-time.After(time.Second * 2):
+		if writeChannel(v.Channel(), "STATUS") {
+			if status = readChannel(v.Channel()); status == nil {
+				log.WARNING.Println("Unable to retrieve status of " + k)
+
+				tmp.Health = "Unknown"
+				tmp.Timestamp = time.Now()
+				tmp.State = "Unknown"
+				cache.Workers[k] = tmp
+
+				Respond(rw, false, "Unknown")
+				return
+			} else {
+				log.INFO.Println("Received status from " + k)
+
+				if status == "Unhealthy" {
+					tmp.Health = "Unhealthy"
+					tmp.Timestamp = time.Now()
+					cache.Workers[k] = tmp
+
+					Respond(rw, true, "Unhealthy")
+					return
+				} else {
+					tmp.Health = "Healthy"
+					tmp.Timestamp = time.Now()
+					cache.Workers[k] = tmp
+				}
+			}
+		} else {
 			log.WARNING.Println("Unable to retrieve status of " + k)
 
 			tmp.Health = "Unknown"
@@ -177,21 +209,6 @@ func (l *Lead) Status(rw http.ResponseWriter, r *http.Request) {
 
 			Respond(rw, false, "Unknown")
 			return
-		case status := <-v.Channel():
-			log.INFO.Println("Received status from " + k)
-
-			if status == "Unhealthy" {
-				tmp.Health = "Unhealthy"
-				tmp.Timestamp = time.Now()
-				cache.Workers[k] = tmp
-
-				Respond(rw, true, "Unhealthy")
-				return
-			} else {
-				tmp.Health = "Healthy"
-				tmp.Timestamp = time.Now()
-				cache.Workers[k] = tmp
-			}
 		}
 	}
 
@@ -207,21 +224,21 @@ func (l *Lead) Metrics(rw http.ResponseWriter, r *http.Request) {
 	metrics := make(map[string]interface{})
 
 	for k, v := range l.Ports {
-		v.Channel() <- "METRICS"
+		if writeChannel(v.Channel(), "METRICS") {
+			if metrics[k] = readChannel(v.Channel()); metrics[k] != nil {
+				tmp := cache.Workers[k]
+				tmp.Metric = metrics[k]
+				tmp.Timestamp = time.Now()
+				cache.Workers[k] = tmp
 
-		select {
-		case <-time.After(time.Second * 2):
+				log.INFO.Println("Received metrics from " + k)
+			} else {
+				metrics[k] = "Unknown"
+				log.WARNING.Println("Unable to retrieve metrics of " + k)
+			}
+		} else {
 			metrics[k] = "Unknown"
 			log.WARNING.Println("Unable to retrieve metrics of " + k)
-		case m := <-v.Channel():
-			metrics[k] = m
-
-			tmp := cache.Workers[k]
-			tmp.Metric = metrics[k]
-			tmp.Timestamp = time.Now()
-			cache.Workers[k] = tmp
-
-			log.INFO.Println("Received metrics from " + k)
 		}
 	}
 
@@ -277,4 +294,28 @@ func allWorkersStopped() bool {
 	}
 
 	return false
+}
+
+// Will write to channel but timeout if channel 
+// is unavailable.
+func writeChannel(ch chan<- interface{}, data interface{}) bool {
+	select {
+	case <- time.After(time.Second * 2):
+		return false
+	case ch <- data:
+		return true
+	}
+
+	return false
+}
+
+// Will read from channel but will timeout if channel 
+// is unavailable.
+func readChannel(ch <-chan interface{}) interface{} {
+	select {
+	case <- time.After(time.Second * 2):
+		return nil
+	case data := <- ch:
+		return data
+	}
 }
