@@ -1,0 +1,5 @@
+package load
+
+import (
+	"testing"
+)
