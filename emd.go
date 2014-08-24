@@ -78,38 +78,6 @@ func getPort(alias string) int {
 	return externalPorts[alias]
 }
 
-// parseProject: Takes a file path string and searches 
-// it backwards to reveal the project name being dealt 
-// with.  It then re-reverses the project name to be 
-// in the correct order.
-func ParseProject(path string) string {
-	name := ""
-
-	if path[len(path)-1] == os.PathSeparator {
-		path = path[:len(path)-1]
-	}
-
-	i := len(path)-1
-	for {
-		if path[i] == os.PathSeparator { return ReverseString(name) }
-		if i < 0 { return "" }
-
-		name = name + string(path[i])
-		i = i-1
-	}
-}
-
-// reverseString: Reverses a string' characters and returns it.
-func ReverseString(name string) string {
-	reverse := ""
-	
-	for i := len(name)-1; i >= 0; i-- {
-		reverse = reverse + string(name[i])
-	}
-	
-	return reverse
-}
-
 // createLeader: Creates node specific leader files by building them 
 // using the leader.template file.
 func CreateLeader(lPath string, node config.NodeConfig, guiPort, cPath string) error {
@@ -270,6 +238,16 @@ func Distribute() {
 		if path[len(path)-1] == os.PathSeparator {
 			path = path[:len(path)-1]
 		}
+		
+		// Need to detect is "." or "./" was entered.
+		if path == "." || path == "./" {
+			var err error
+			path, err = filepath.Abs(path)
+			if err != nil {
+				log.ERROR.Println("Path incorrect or badly formatted")
+				os.Exit(1)
+			}
+		}
 	} else {
 		log.ERROR.Println("Usage: emd distribute --path <path to dir containing config.json>")
 		log.ERROR.Println("Usage: emd distribute --help")
@@ -320,6 +298,16 @@ func Start() {
 		if path[len(path)-1] == os.PathSeparator {
 			path = path[:len(path)-1]
 		}
+		
+		// Need to detect is "." or "./" was entered.
+		if path == "." || path == "./" {
+			var err error
+			path, err = filepath.Abs(path)
+			if err != nil {
+				log.ERROR.Println("Path incorrect or badly formatted")
+				os.Exit(1)
+			}
+		}
 	} else {
 		log.ERROR.Println("Usage: emd start --path <path to dir containing config.json>")
 		log.ERROR.Println("Usage: emd start --help")
@@ -332,7 +320,7 @@ func Start() {
 		os.Exit(1)
 	}
 
-	projectName := ParseProject(path)
+	projectName := filepath.Base(path)
 	if projectName == "" {
 		log.ERROR.Println("Unable to parse distribution name from path.")
 		log.ERROR.Println("Usage: emd start --path <path to dir containing config.json>")
