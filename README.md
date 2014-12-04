@@ -1,4 +1,4 @@
-Go-EMD: Embarassingly Distributed
+Go-EMD: Embarassingly Distributed: Master [https://travis-ci.org/go-emd/emd.svg?branch=master] Develop [https://travis-ci.org/go-emd/emd.svg?branch=develop]
 ==
 
 ## Description
