@@ -1,6 +1,9 @@
 Go-EMD: Embarassingly Distributed
 ==
 
+Master  [![Build Status](https://travis-ci.org/go-emd/emd.svg?branch=master)](https://travis-ci.org/go-emd/emd)
+Develop [![Build Status](https://travis-ci.org/go-emd/emd.svg?branch=develop)](https://travis-ci.org/go-emd/emd)
+
 ## Description
 This is a framework built for a clustered environment.  The Distribution amoung the cluster is made up of Workers (go routines that perform raw computing) and leaders (one per node) controls persistance and helps coordinate between nodes giving metrics and the ability to control the distribution remotely via a web gui.
 
