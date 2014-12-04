@@ -1,70 +1,70 @@
 /*
-	emd - Contains utilities that allow users to create new emd 
+	emd - Contains utilities that allow users to create new emd
 	projects, compile, distribute, start, and monitor on multiple machines.
-	
+
 	The commands available through this executable are:
-	
-	emd new: Performs a git clone of a boilerplate repository that is 
-	already set up to run on a distribution therefore allowing quick 
+
+	emd new: Performs a git clone of a boilerplate repository that is
+	already set up to run on a distribution therefore allowing quick
 	and painless starting of projects.
-	
-	emd compile --path <path to folder containing distribution>: Will 
-	compile a distribution project by first parsing the config.json 
-	file creating node leader go files then building them with 
+
+	emd compile --path <path to folder containing distribution>: Will
+	compile a distribution project by first parsing the config.json
+	file creating node leader go files then building them with
 	"go build".
-	
-	emd distribute --path <path to folder containing distribution>: Distributes 
+
+	emd distribute --path <path to folder containing distribution>: Distributes
 	the distribution using the "rsync" command into the tmp directory of the machine.
-	
-	emd start --path <path to folder containing distribution>: Starts the 
-	distribution by ssh'ing to each individual node in the distribution 
-	and starting is node leader in the background.  NOTE: running the compile and 
+
+	emd start --path <path to folder containing distribution>: Starts the
+	distribution by ssh'ing to each individual node in the distribution
+	and starting is node leader in the background.  NOTE: running the compile and
 	distribute commands will need to be done before this one.
-	
-	emd stop --path <path to folder containing distribution>: Stops the distribution 
-	by sending REST calls to the endpoints of each node leader in the distribution 
+
+	emd stop --path <path to folder containing distribution>: Stops the distribution
+	by sending REST calls to the endpoints of each node leader in the distribution
 	therefore killing each process and affectively stopping it.
-	
-	emd status --path <path to folder containing distribution>: Returns the status 
-	of the distribution when running in json format.  It will either be "Healthy", 
+
+	emd status --path <path to folder containing distribution>: Returns the status
+	of the distribution when running in json format.  It will either be "Healthy",
 	"Unhealthy" or "Unknown"
-	
-	emd metrics --path <path to folder containing distribution>: Returns the metrics 
+
+	emd metrics --path <path to folder containing distribution>: Returns the metrics
 	created by the distribution that is running in json format.
 */
 package main
 
 import (
+	"fmt"
 	"github.com/go-emd/emd/config"
 	"github.com/go-emd/emd/log"
-	"code.google.com/p/go.crypto/ssh"
 	"github.com/howeyc/gopass"
-	"fmt"
-	"strings"
-	"bytes"
-	"runtime"
+	"golang.org/x/crypto/ssh"
 	"io/ioutil"
+	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
-	"net/http"
+	"runtime"
+	"strings"
 	"text/template"
 )
 
-// eq: Is used to allow boolean logic between string using a 
+// eq: Is used to allow boolean logic between string using a
 // template leader file.
 func eq(s1, s2 string) bool {
 	return s1 == s2
 }
 
-// Contains currently used port when assigning them during 
+// Contains currently used port when assigning them during
 // the compilations of the template leader file.
 var externalPorts map[string]int
 var currentExtPort int
 
-// getPort: Is used to lookup if a port is already been 
-// assigned for a particular connection if so then use 
+// getPort: Is used to lookup if a port is already been
+// assigned for a particular connection if so then use
 // that port, if not then assign a new one.
 func getPort(alias string) int {
 	for k, v := range externalPorts {
@@ -78,12 +78,12 @@ func getPort(alias string) int {
 	return externalPorts[alias]
 }
 
-// createLeader: Creates node specific leader files by building them 
+// createLeader: Creates node specific leader files by building them
 // using the leader.template file.
 func CreateLeader(lPath string, node config.NodeConfig, guiPort, cPath string) error {
 	type tType struct {
-		Node    config.NodeConfig
-		GuiPort string
+		Node       config.NodeConfig
+		GuiPort    string
 		ConfigPath string
 	}
 
@@ -94,7 +94,7 @@ func CreateLeader(lPath string, node config.NodeConfig, guiPort, cPath string) e
 		return err
 	}
 
-	f, err := os.Create(filepath.Join(lPath, node.Hostname + ".go"))
+	f, err := os.Create(filepath.Join(lPath, node.Hostname+".go"))
 	if err != nil {
 		return err
 	}
@@ -145,7 +145,7 @@ func Compile() {
 	config.Process(filepath.Join(path, "config.json"), &cfg)
 
 	// Loop through all nodes in config and create
-	//   leader files for each, then build them 
+	//   leader files for each, then build them
 	//   placing them into the /leaders/bin dir.
 	for _, n := range cfg.Nodes {
 		err := CreateLeader(filepath.Join(path, "leaders"), n, cfg.GUI_port, filepath.Join(path, "config.json"))
@@ -153,19 +153,21 @@ func Compile() {
 			log.ERROR.Println(err)
 			os.Exit(1)
 		}
-		
-		log.INFO.Println("Leader "+n.Hostname+" compiled successfully")
-		
+
+		log.INFO.Println("Leader " + n.Hostname + " compiled successfully")
+
 		out, err := BuildLeader(filepath.Join(path, "leaders"), n.Hostname)
 		if err != nil {
 			log.ERROR.Println(out)
 			log.ERROR.Println(err)
 			os.Exit(1)
 		}
-		if out != "" { log.INFO.Println(out) }
-		log.INFO.Println("Leader "+n.Hostname+" built successfully")
+		if out != "" {
+			log.INFO.Println(out)
+		}
+		log.INFO.Println("Leader " + n.Hostname + " built successfully")
 	}
-	
+
 	log.INFO.Println("Compile successful")
 }
 
@@ -197,21 +199,21 @@ func Clean() {
 	config.Process(filepath.Join(path, "config.json"), &cfg)
 
 	for _, n := range cfg.Nodes {
-		log.INFO.Println("Removing "+filepath.Join(path, "leaders", n.Hostname+".go"))
+		log.INFO.Println("Removing " + filepath.Join(path, "leaders", n.Hostname+".go"))
 		err := os.Remove(filepath.Join(path, "leaders", n.Hostname+".go"))
 		if err != nil {
 			log.ERROR.Println(err)
 			os.Exit(1)
 		}
 
-		log.INFO.Println("Removing "+filepath.Join(path, "leaders", "bin", n.Hostname))
+		log.INFO.Println("Removing " + filepath.Join(path, "leaders", "bin", n.Hostname))
 		err = os.Remove(filepath.Join(path, "leaders", "bin", n.Hostname))
 		if err != nil {
 			log.ERROR.Println(err)
 			os.Exit(1)
 		}
 	}
-	
+
 	log.INFO.Println("Clean successful")
 }
 
@@ -233,12 +235,12 @@ func Distribute() {
 		os.Exit(1)
 	} else if os.Args[0] == "--path" || os.Args[0] == "-p" && len(os.Args) == 2 {
 		path = os.Args[1]
-		
+
 		// Need to make sure trailing slash is removed.
 		if path[len(path)-1] == os.PathSeparator {
 			path = path[:len(path)-1]
 		}
-		
+
 		// Need to detect is "." or "./" was entered.
 		if path == "." || path == "./" {
 			var err error
@@ -263,8 +265,8 @@ func Distribute() {
 	var cfg config.Config
 	config.Process(filepath.Join(path, "config.json"), &cfg)
 
-	for _, n := range cfg.Nodes{
-		log.INFO.Println("Distributing to "+n.Hostname)
+	for _, n := range cfg.Nodes {
+		log.INFO.Println("Distributing to " + n.Hostname)
 		_, err := exec.Command("rsync", "-a", "-z", path, user.Username+"@"+n.Hostname+":"+os.TempDir()).Output()
 		if err != nil {
 			log.ERROR.Println(err)
@@ -293,13 +295,13 @@ func Start() {
 		os.Exit(1)
 	} else if os.Args[0] == "--path" || os.Args[0] == "-p" && len(os.Args) == 2 {
 		path = os.Args[1]
-		
+
 		// Need to make sure trailing slash is removed.
 		if path[len(path)-1] == os.PathSeparator {
 			path = path[:len(path)-1]
 		}
-		
-		// Need to detect is "." or "./" was entered.
+
+		// Need to detect if "." or "./" was entered.
 		if path == "." || path == "./" {
 			var err error
 			path, err = filepath.Abs(path)
@@ -335,17 +337,17 @@ func Start() {
 	useSamePasswd := false
 	var password []byte
 
-	for _, n := range cfg.Nodes{
-		log.INFO.Println("Starting leader on "+n.Hostname)
+	for _, n := range cfg.Nodes {
+		log.INFO.Println("Starting leader on " + n.Hostname)
 
 		if !useSamePasswd {
-			fmt.Printf(user.Username+"@"+n.Hostname+"'s password: ")
+			fmt.Printf(user.Username + "@" + n.Hostname + "'s password: ")
 			password = gopass.GetPasswd()
 
 			if !passwdAnswered {
 				passwdAnswered = true
 				var ans string
-			
+
 				fmt.Printf("Is this password the same for all nodes (y/n): ")
 				fmt.Scanf("%s", &ans)
 				if strings.ToUpper(ans) == "Y" {
@@ -359,28 +361,29 @@ func Start() {
 			Auth: []ssh.AuthMethod{
 				ssh.Password(string(password)),
 			},
+			HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+				return nil
+			},
 		}
 		client, err := ssh.Dial("tcp", n.Hostname+":22", config)
 		if err != nil {
 			log.ERROR.Println(err)
 			os.Exit(1)
 		}
-		
+		defer client.Close()
+
 		session, err := client.NewSession()
 		if err != nil {
 			log.ERROR.Println(err)
 			os.Exit(1)
 		}
 		defer session.Close()
-	
-		var b bytes.Buffer
-		session.Stdout = &b
-		
+
 		var cmd string
 		if runtime.GOOS == "windows" {
-			cmd = "start /B"+filepath.Join(os.TempDir(), projectName, "leaders", "bin", n.Hostname)+" > "+os.DevNull
+			cmd = "start /B" + filepath.Join(os.TempDir(), projectName, "leaders", "bin", n.Hostname) + " > " + os.DevNull
 		} else {
-			cmd = "nohup "+filepath.Join(os.TempDir(), projectName, "leaders", "bin", n.Hostname)+" > "+os.DevNull+" 2>&1 &"
+			cmd = "nohup " + filepath.Join(os.TempDir(), projectName, "leaders", "bin", n.Hostname) + " > " + os.DevNull + " 2>&1 &"
 		}
 
 		if err := session.Run(cmd); err != nil {
@@ -410,7 +413,7 @@ func Stop() {
 		os.Exit(1)
 	} else if os.Args[0] == "--path" || os.Args[0] == "-p" && len(os.Args) == 2 {
 		path = os.Args[1]
-		
+
 		// Need to make sure trailing slash is removed.
 		if path[len(path)-1] == os.PathSeparator {
 			path = path[:len(path)-1]
@@ -420,31 +423,33 @@ func Stop() {
 		log.ERROR.Println("Usage: emd stop --help")
 		os.Exit(1)
 	}
-	
+
 	var cfg config.Config
 	config.Process(filepath.Join(path, "config.json"), &cfg)
-	
+
 	log.INFO.Println("Stopping distribution")
-	
+
 	for _, n := range cfg.Nodes {
-		log.INFO.Println("Stopping node "+n.Hostname)
+		log.INFO.Println("Stopping node " + n.Hostname)
 
 		// Stop all the workers
-		_, err := http.Get("http://"+n.Hostname+":"+cfg.GUI_port+"/stop")
+		_, err := http.Get("http://" + n.Hostname + ":" + cfg.GUI_port + "/stop")
 		if err != nil {
 			log.ERROR.Println(err)
 			os.Exit(1)
 		}
 
 		// Stop the leader
-		_, err = http.Get("http://"+n.Hostname+":"+cfg.GUI_port+"/stop")
+		_, err = http.Get("http://" + n.Hostname + ":" + cfg.GUI_port + "/stop")
 		if err != nil {
-			if strings.Contains(err.Error(), "EOF") { continue }
+			if strings.Contains(err.Error(), "EOF") {
+				continue
+			}
 			log.ERROR.Println(err)
 			os.Exit(1)
 		}
 	}
-	
+
 	log.INFO.Println("Stop successful")
 }
 
@@ -466,7 +471,7 @@ func Status() {
 		os.Exit(1)
 	} else if os.Args[0] == "--path" || os.Args[0] == "-p" && len(os.Args) == 2 {
 		path = os.Args[1]
-		
+
 		// Need to make sure trailing slash is removed.
 		if path[len(path)-1] == os.PathSeparator {
 			path = path[:len(path)-1]
@@ -476,19 +481,19 @@ func Status() {
 		log.ERROR.Println("Usage: emd status --help")
 		os.Exit(1)
 	}
-	
+
 	var cfg config.Config
 	config.Process(filepath.Join(path, "config.json"), &cfg)
-	
-	for _, n := range cfg.Nodes {
-		log.INFO.Println("Obtaining status of node "+n.Hostname)
 
-		resp, err := http.Get("http://"+n.Hostname+":"+cfg.GUI_port+"/status")
+	for _, n := range cfg.Nodes {
+		log.INFO.Println("Obtaining status of node " + n.Hostname)
+
+		resp, err := http.Get("http://" + n.Hostname + ":" + cfg.GUI_port + "/status")
 		if err != nil {
 			log.ERROR.Println(err)
 			os.Exit(1)
 		}
-		
+
 		content, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			log.ERROR.Println(err)
@@ -519,7 +524,7 @@ func Metrics() {
 		os.Exit(1)
 	} else if os.Args[0] == "--path" || os.Args[0] == "-p" && len(os.Args) == 2 {
 		path = os.Args[1]
-		
+
 		// Need to make sure trailing slash is removed.
 		if path[len(path)-1] == os.PathSeparator {
 			path = path[:len(path)-1]
@@ -529,14 +534,14 @@ func Metrics() {
 		log.ERROR.Println("Usage: emd metrics --help")
 		os.Exit(1)
 	}
-	
+
 	var cfg config.Config
 	config.Process(filepath.Join(path, "config.json"), &cfg)
-	
-	for _, n := range cfg.Nodes {
-		log.INFO.Println("Obtaining metrics of node "+n.Hostname)
 
-		resp, err := http.Get("http://"+n.Hostname+":"+cfg.GUI_port+"/metrics")
+	for _, n := range cfg.Nodes {
+		log.INFO.Println("Obtaining metrics of node " + n.Hostname)
+
+		resp, err := http.Get("http://" + n.Hostname + ":" + cfg.GUI_port + "/metrics")
 		if err != nil {
 			log.ERROR.Println(err)
 			os.Exit(1)
@@ -556,7 +561,7 @@ func Metrics() {
 
 /*
  *
- * Create directory structure for new distribution (copy boilerplate 
+ * Create directory structure for new distribution (copy boilerplate
  *    distribution contents into projectName directory.
  *
  */

@@ -1,10 +1,11 @@
 package main
 
 import (
-	"testing"
-	//"os"
-	"os/exec"
 	"io/ioutil"
+	"os/exec"
+	"path/filepath"
+	"testing"
+	"os/user"
 )
 
 func TestNewProject(t *testing.T) {
@@ -30,7 +31,7 @@ func TestNewProject(t *testing.T) {
 	}
 }
 
-func TestCompile(t *testing.T){
+func TestCompile(t *testing.T) {
 	answer := "MD5 (boilerplate/leaders/bin/localhost) = dc287bfea93976a1d00b4e96c133e3b4\n"
 
 	output, err := exec.Command("go", "run", "emd.go", "compile", "--path", "boilerplate").CombinedOutput()
@@ -47,7 +48,7 @@ func TestCompile(t *testing.T){
 	}
 }
 
-func TestDistribute(t *testing.T){
+func TestDistribute(t *testing.T) {
 	_, err := exec.Command("go", "run", "emd.go", "distribute", "--path", "boilerplate").CombinedOutput()
 	if err != nil {
 		t.Fatal(err)
@@ -57,8 +58,21 @@ func TestDistribute(t *testing.T){
 	}
 }
 
-func TestStart(t *testing.T){
-	_, err := exec.Command("go", "run", "emd.go", "start", "--path", "boilerplate").CombinedOutput()
+func TestStart(t *testing.T) {
+	// Make sure the localhost rsa is added to the known hosts
+	usr, err := user.Current()
+	if err != nil {
+		t.Fatal(err)
+		t.Fail()
+	}
+	_, err = exec.Command("ssh-keyscan", "-t", "rsa", "localhost", ">>",
+		filepath.Join(usr.HomeDir, ".ssh", "known_hosts")).CombinedOutput()
+	if err != nil {
+		t.Fatal(err)
+		t.Fail()
+	}
+
+	_, err = exec.Command("go", "run", "emd.go", "start", "--path", "boilerplate").CombinedOutput()
 	if err != nil {
 		t.Fatal(err)
 		t.Fail()
@@ -67,7 +81,7 @@ func TestStart(t *testing.T){
 	}
 }
 
-func TestStatus(t *testing.T){
+func TestStatus(t *testing.T) {
 	_, err := exec.Command("go", "run", "emd.go", "status", "--path", "boilerplate").CombinedOutput()
 	if err != nil {
 		t.Fatal(err)
@@ -77,7 +91,7 @@ func TestStatus(t *testing.T){
 	}
 }
 
-func TestMetrics(t *testing.T){
+func TestMetrics(t *testing.T) {
 	_, err := exec.Command("go", "run", "emd.go", "metrics", "--path", "boilerplate").CombinedOutput()
 	if err != nil {
 		t.Fatal(err)
@@ -87,7 +101,7 @@ func TestMetrics(t *testing.T){
 	}
 }
 
-func TestStop(t *testing.T){
+func TestStop(t *testing.T) {
 	_, err := exec.Command("go", "run", "emd.go", "stop", "--path", "boilerplate").CombinedOutput()
 	if err != nil {
 		t.Fatal(err)
@@ -97,7 +111,7 @@ func TestStop(t *testing.T){
 	}
 }
 
-func TestClean(t *testing.T){
+func TestClean(t *testing.T) {
 	_, err := exec.Command("go", "run", "emd.go", "clean", "--path", "boilerplate").CombinedOutput()
 	if err != nil {
 		t.Fatal(err)
