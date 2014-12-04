@@ -3,9 +3,7 @@ package main
 import (
 	"io/ioutil"
 	"os/exec"
-	"path/filepath"
 	"testing"
-	"os/user"
 )
 
 func TestNewProject(t *testing.T) {
@@ -18,14 +16,13 @@ func TestNewProject(t *testing.T) {
 	}
 
 	exec.Command("go", "run", "emd.go", "new").CombinedOutput()
-	files, err := ioutil.ReadDir("./boilerplate")
+	files, err := ioutil.ReadDir("boilerplate")
 	if err != nil {
 		t.Fatal(err)
 	} else {
 		for i, file := range files {
 			if file.Name() != answers[i] {
-				t.Log(file.Name() + "!=" + answers[i])
-				t.Fail()
+				t.Fatal(file.Name() + "!=" + answers[i])
 			}
 		}
 	}
@@ -38,12 +35,10 @@ func TestCompile(t *testing.T) {
 	if err != nil {
 		t.Log(string(output))
 		t.Fatal(err)
-		t.Fail()
 	} else {
 		output, _ = exec.Command("md5", "boilerplate/leaders/bin/localhost").Output()
 		if string(output) != answer {
-			t.Log(string(output) + "!=" + answer)
-			t.Fail()
+			t.Fatal(string(output) + "!=" + answer)
 		}
 	}
 }
@@ -52,32 +47,13 @@ func TestDistribute(t *testing.T) {
 	_, err := exec.Command("go", "run", "emd.go", "distribute", "--path", "boilerplate").CombinedOutput()
 	if err != nil {
 		t.Fatal(err)
-		t.Fail()
-	} else {
-		// TODO
 	}
 }
 
 func TestStart(t *testing.T) {
-	// Make sure the localhost rsa is added to the known hosts
-	usr, err := user.Current()
+	_, err := exec.Command("go", "run", "emd.go", "start", "--path", "boilerplate").CombinedOutput()
 	if err != nil {
 		t.Fatal(err)
-		t.Fail()
-	}
-	_, err = exec.Command("ssh-keyscan", "-t", "rsa", "localhost", ">>",
-		filepath.Join(usr.HomeDir, ".ssh", "known_hosts")).CombinedOutput()
-	if err != nil {
-		t.Fatal(err)
-		t.Fail()
-	}
-
-	_, err = exec.Command("go", "run", "emd.go", "start", "--path", "boilerplate").CombinedOutput()
-	if err != nil {
-		t.Fatal(err)
-		t.Fail()
-	} else {
-		// TODO
 	}
 }
 
@@ -85,9 +61,6 @@ func TestStatus(t *testing.T) {
 	_, err := exec.Command("go", "run", "emd.go", "status", "--path", "boilerplate").CombinedOutput()
 	if err != nil {
 		t.Fatal(err)
-		t.Fail()
-	} else {
-		// TODO
 	}
 }
 
@@ -95,9 +68,6 @@ func TestMetrics(t *testing.T) {
 	_, err := exec.Command("go", "run", "emd.go", "metrics", "--path", "boilerplate").CombinedOutput()
 	if err != nil {
 		t.Fatal(err)
-		t.Fail()
-	} else {
-		// TODO
 	}
 }
 
@@ -105,9 +75,6 @@ func TestStop(t *testing.T) {
 	_, err := exec.Command("go", "run", "emd.go", "stop", "--path", "boilerplate").CombinedOutput()
 	if err != nil {
 		t.Fatal(err)
-		t.Fail()
-	} else {
-		// TODO
 	}
 }
 
@@ -115,9 +82,6 @@ func TestClean(t *testing.T) {
 	_, err := exec.Command("go", "run", "emd.go", "clean", "--path", "boilerplate").CombinedOutput()
 	if err != nil {
 		t.Fatal(err)
-		t.Fail()
-	} else {
-		// TODO
 	}
 
 	_, _ = exec.Command("rm", "-rf", "boilerplate").Output()

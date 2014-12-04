@@ -39,7 +39,7 @@ import (
 	"github.com/go-emd/emd/config"
 	"github.com/go-emd/emd/log"
 	"github.com/howeyc/gopass"
-	"golang.org/x/crypto/ssh"
+	"code.google.com/p/go.crypto/ssh"
 	"io/ioutil"
 	"net"
 	"net/http"
