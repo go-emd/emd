@@ -1,0 +1,22 @@
+{
+	"Nfs": false,
+	"GUI_port": "1234",
+	"Nodes": [
+		{
+			"Hostname": "example.com",
+			"Workers": [
+				{
+					"Name": "MyName",
+					"Connections": [
+						{
+							"Type": "LocalEgress",
+							"Worker": "WorkerName",
+							"Alias": "WorkerAlias",
+							"Buffer": "0"
+						}
+					]
+				}
+			]
+		}
+	]
+}

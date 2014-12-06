@@ -9,4 +9,3 @@ install:
 
 script:
   - go test ./...
-  - go build

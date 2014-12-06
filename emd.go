@@ -41,7 +41,6 @@ import (
 	"github.com/howeyc/gopass"
 	"code.google.com/p/go.crypto/ssh"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -342,7 +341,7 @@ func Start() {
 
 		if !useSamePasswd {
 			fmt.Printf(user.Username + "@" + n.Hostname + "'s password: ")
-			password = gopass.GetPasswd()
+			password = gopass.GetPasswdMasked()
 
 			if !passwdAnswered {
 				passwdAnswered = true
@@ -360,9 +359,6 @@ func Start() {
 			User: user.Username,
 			Auth: []ssh.AuthMethod{
 				ssh.Password(string(password)),
-			},
-			HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-				return nil
 			},
 		}
 		client, err := ssh.Dial("tcp", n.Hostname+":22", config)
