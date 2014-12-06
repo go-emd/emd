@@ -1,16 +1,13 @@
 package load
 
 import (
-	"github.com/go-emd/emd/log"
 	"reflect"
 )
 
 // Copy is used when the ingress traffic should be copied 
 // to all the egress channels.
-func Copy(outputs []chan interface{}, inputs ...<-chan interface{}) {
+func Copy(outputs []chan interface{}, inputs []chan interface{}) {
 	inputCount := len(inputs)
-	outputCount := len(outputs)
-	currentOutput := 0
 
 	iCases := make([]reflect.SelectCase, inputCount)
 
@@ -23,10 +20,10 @@ func Copy(outputs []chan interface{}, inputs ...<-chan interface{}) {
 		chosen, recv, recvOK := reflect.Select(iCases)
 		if recvOK {
 			for i := range outputs {
-				outputs[i] <- recv.Interface{}
+				outputs[i] <- recv.Interface()
 			}
 		} else {
-			iCases[chosen].Chan = reflect.Valueof(nil)
+			iCases[chosen].Chan = reflect.ValueOf(nil)
 			inputCount -= 1
 		}
 	}

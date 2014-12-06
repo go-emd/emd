@@ -1,28 +1,95 @@
 package connector
 
-/*
-	This test suite will test all the connector 
-	implementations including the local, and 
-	externalUDP ingress and egress implementations.
-*/
-
 import (
 	"testing"
+	"time"
+	"github.com/go-emd/emd/core"
+	"github.com/go-emd/emd/log"
+	"io/ioutil"
 )
 
-func TestOpen(t *testing.T) {
-	
+func TestLocal(t *testing.T) {
+	log.Init(ioutil.Discard, ioutil.Discard, ioutil.Discard, ioutil.Discard)
+
+	mylocal := &Local{
+		Base{
+			core.Core{"Test"},
+			make(chan interface{}, 0),
+		},
+	}
+
+	// Sender
+	go func() {
+		mylocal.Open()
+		mylocal.Channel() <- "HEY"
+		mylocal.Close()
+	}()
+
+	// Receiver
+	go func() {
+		mylocal.Open()
+
+		select {
+		case <- time.After(time.Second * 2):
+			t.Fail()
+		case data := <- mylocal.Channel():
+			if data != "HEY" {
+				t.Fail()
+			}
+		}
+
+		mylocal.Close()
+	}()
 }
 
-func TestClose(t *testing.T) {
-	
-}
+func TestExternalUDP(t *testing.T) {
+	log.Init(ioutil.Discard, ioutil.Discard, ioutil.Discard, ioutil.Discard)
 
-func TestChannel(t *testing.T) {
-	
-}
+	myexternalIngress := &ExternalUDPIngress{
+		External{
+			Base{
+				core.Core{"Test"},
+				make(chan interface{}, 0),
+			},
+			"localhost",
+			"60000",
+		},
+		Udp{nil},
+		nil,
+	}
 
-// externalUDPIngress only
-func TestRegister(t *testing.T) {
-	
+	myexternalEgress := &ExternalUDPEgress{
+		External{
+			Base{
+				core.Core{"Test"},
+				make(chan interface{}, 0),
+			},
+			"localhost",
+			"60000",
+		},
+		Udp{nil},
+	}
+
+	// Sender
+	go func() {
+		myexternalEgress.Open()
+		myexternalEgress.Channel() <- "HEY"
+		myexternalEgress.Close()
+	}()
+
+	// Receiver
+	go func() {
+		myexternalIngress.Open()
+
+		select {
+		case <- time.After(time.Second * 2):
+			t.Fail()
+		case data := <- myexternalIngress.Channel():
+			if data != "HEY" {
+				t.Fail()
+			}
+		}
+
+		myexternalIngress.Close()
+	}()
 }

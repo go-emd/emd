@@ -1,13 +1,12 @@
 package load
 
 import (
-	"github.com/go-emd/emd/log"
 	"reflect"
 )
 
 // RoundRobin is used when the ingress traffic should be 
 // dispersed between the egress channels.
-func RoundRobin(outputs []chan interface{}, inputs ...<-chan interface{}) {
+func RoundRobin(outputs []chan interface{}, inputs []chan interface{}) {
 	inputCount := len(inputs)
 	outputCount := len(outputs)
 	currentOutput := 0
@@ -24,10 +23,10 @@ func RoundRobin(outputs []chan interface{}, inputs ...<-chan interface{}) {
 		if recvOK {
 			if currentOutput > outputCount - 1 { currentOutput = 0 }
 
-			outputs[currentOutput] <- recv.Interface{}
+			outputs[currentOutput] <- recv.Interface()
 			currentOutput += 1
 		} else {
-			iCases[chosen].Chan = reflect.Valueof(nil)
+			iCases[chosen].Chan = reflect.ValueOf(nil)
 			inputCount -= 1
 		}
 	}

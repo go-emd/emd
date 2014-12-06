@@ -12,21 +12,21 @@ package load
 
 import (
 	"github.com/go-emd/emd/log"
-	"reflect"
+	"os"
 )
 
 // Function type that must be passed into the NtoN function call.  
 // This can either be the RoundRobin function, Copy function or a 
 // custom function in which the leader.template file will need 
 // to be edited within the emd distribution.
-type Kind func([]chan interface{}, ...<-chan interface{})
+type Kind func(outputs []chan interface{}, inputs []chan interface{})
 
 // Allows N connections' channels to have ingress traffic and will 
 // forward that traffic to the egress array of N connectors' channels.  
 // There are multiple types of forwarding that can be used such as 
 // round robin, and copy.
-func NtoN(outputs []chan interface{}, inputs ...<-chan interface{}, handler kind) {
-	if len(inputs == 0) || len(outputs == 0) {
+func NtoN(handler Kind, outputs []chan interface{}, inputs []chan interface{}) {
+	if len(inputs) == 0 || len(outputs) == 0 {
 		log.ERROR.Println("NtoN requires at least one input and one output")
 		os.Exit(1)
 	}
