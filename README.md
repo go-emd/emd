@@ -1,7 +1,7 @@
 Go-EMD: Embarassingly Distributed
 ==
 
-[![Build Status](https://travis-ci.org/go-emd/emd.svg?branch=master)](https://travis-ci.org/go-emd/emd)
+[![Circle CI](https://circleci.com/gh/go-emd/emd.svg?style=svg)](https://circleci.com/gh/go-emd/emd)
 [![GoDoc](https://godoc.org/github.com/go-emd/emd?status.png)](https://godoc.org/github.com/go-emd/emd)
 
 ## Description
