@@ -1,0 +1,8 @@
+yanks:
+  - vcs: git
+    alias: c_branch
+    repo: https://github.com/jelathro/C.git
+    version:
+      type: branch
+      value: master
+
